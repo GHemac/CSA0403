@@ -1,0 +1,91 @@
+#include <stdio.h>
+#include <stdbool.h>
+
+#define NUM_PROCESSES 3
+#define NUM_RESOURCES 2
+
+// Function to check if the system is in a safe state
+bool isSafeState(int available[], int allocation[][NUM_RESOURCES], int maxDemand[][NUM_RESOURCES]) {
+    // Initialize Work vector (available resources)
+    int work[NUM_RESOURCES];
+    for (int i = 0; i < NUM_RESOURCES; i++) {
+        work[i] = available[i];
+    }
+
+    // Initialize Finish vector (to track which processes have finished)
+    bool finish[NUM_PROCESSES];
+    for (int i = 0; i < NUM_PROCESSES; i++) {
+        finish[i] = false;
+    }
+
+    // While there are unfinished processes
+    while (true) {
+        bool found = false;
+        // Iterate through each process
+        for (int i = 0; i < NUM_PROCESSES; i++) {
+            // If the process hasn't finished and its needs can be met by available resources
+            if (!finish[i] && canComplete(work, allocation[i], maxDemand[i])) {
+                // "Allocate" the resources to the process
+                for (int j = 0; j < NUM_RESOURCES; j++) {
+                    work[j] += allocation[i][j]; // Release resources held by process i
+                }
+                finish[i] = true;  // Mark the process as finished
+                found = true;       // Indicate that a process was completed
+            }
+        }
+        // If no more processes can be completed, the system is not safe
+        if (!found) {
+            return false; // Unsafe state
+        }
+        // If all processes are completed, the system is safe
+        bool allFinished = true;
+        for (int i = 0; i < NUM_PROCESSES; i++) {
+            if (!finish[i]) {
+                allFinished = false;
+                break;
+            }
+        }
+        if (allFinished) {
+            return true; // Safe state
+        }
+    }
+}
+
+// Function to check if a process can be completed with available resources
+bool canComplete(int work[], int allocation[], int maxDemand[]) {
+    // Check if the sum of allocated and available resources is less than or equal to the maximum demand
+    for (int i = 0; i < NUM_RESOURCES; i++) {
+        if (work[i] + allocation[i] > maxDemand[i]) {
+            return false; // Cannot complete
+        }
+    }
+    return true; // Can complete
+}
+
+int main() {
+    // Define the available resources
+    int available[] = {3, 2};
+
+    // Define the maximum resource demands of each process
+    int maxDemand[][NUM_RESOURCES] = {
+        {7, 5},
+        {3, 2},
+        {9, 0}
+    };
+
+    // Define the current resource allocation to each process
+    int allocation[][NUM_RESOURCES] = {
+        {0, 1},
+        {2, 0},
+        {3, 0}
+    };
+
+    // Check if the system is in a safe state
+    if (isSafeState(available, allocation, maxDemand)) {
+        printf("System is in a safe state.\n");
+    } else {
+        printf("System is in an unsafe state.\n");
+    }
+
+    return 0;
+} 
