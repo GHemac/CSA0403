@@ -1,0 +1,152 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+// Structure to represent a memory block
+typedef struct Block {
+    int size;
+    int allocated; // 0 for free, 1 for allocated
+    struct Block* next;
+} Block;
+
+// Function to initialize the memory blocks
+Block* initializeMemory(int totalSize) {
+    Block* head = (Block*)malloc(sizeof(Block));
+    head->size = totalSize;
+    head->allocated = 0;
+    head->next = NULL;
+    return head;
+}
+
+// Function to allocate memory using First-fit strategy
+Block* allocateFirstFit(Block* head, int size) {
+    Block* current = head;
+    while (current != NULL) {
+        if (current->allocated == 0 && current->size >= size) {
+            if (current->size == size) {
+                current->allocated = 1;
+            } else {
+                Block* newBlock = (Block*)malloc(sizeof(Block));
+                newBlock->size = current->size - size;
+                newBlock->allocated = 0;
+                newBlock->next = current->next;
+                current->next = newBlock;
+                current->size = size;
+                current->allocated = 1;
+            }
+            return current;
+        }
+        current = current->next;
+    }
+    return NULL; // No suitable block found
+}
+
+// Function to allocate memory using Best-fit strategy
+Block* allocateBestFit(Block* head, int size) {
+    Block* current = head;
+    Block* bestBlock = NULL;
+    int minDiff = -1;
+
+    while (current != NULL) {
+        if (current->allocated == 0 && current->size >= size) {
+            int diff = current->size - size;
+            if (bestBlock == NULL || diff < minDiff) {
+                bestBlock = current;
+                minDiff = diff;
+            }
+        }
+        current = current->next;
+    }
+
+    if (bestBlock != NULL) {
+        if (bestBlock->size == size) {
+            bestBlock->allocated = 1;
+        } else {
+            Block* newBlock = (Block*)malloc(sizeof(Block));
+            newBlock->size = bestBlock->size - size;
+            newBlock->allocated = 0;
+            newBlock->next = bestBlock->next;
+            bestBlock->next = newBlock;
+            bestBlock->size = size;
+            bestBlock->allocated = 1;
+        }
+        return bestBlock;
+    }
+    return NULL;
+}
+
+// Function to allocate memory using Worst-fit strategy
+Block* allocateWorstFit(Block* head, int size) {
+    Block* current = head;
+    Block* worstBlock = NULL;
+    int maxDiff = -1;
+
+    while (current != NULL) {
+        if (current->allocated == 0 && current->size >= size) {
+            int diff = current->size - size;
+            if (diff > maxDiff) {
+                worstBlock = current;
+                maxDiff = diff;
+            }
+        }
+        current = current->next;
+    }
+
+    if (worstBlock != NULL) {
+        if (worstBlock->size == size) {
+            worstBlock->allocated = 1;
+        } else {
+            Block* newBlock = (Block*)malloc(sizeof(Block));
+            newBlock->size = worstBlock->size - size;
+            newBlock->allocated = 0;
+            newBlock->next = worstBlock->next;
+            worstBlock->next = newBlock;
+            worstBlock->size = size;
+            worstBlock->allocated = 1;
+        }
+        return worstBlock;
+    }
+    return NULL;
+}
+
+// Function to deallocate memory
+void deallocateMemory(Block* block) {
+    block->allocated = 0;
+}
+
+// Function to display memory status
+void displayMemory(Block* head) {
+    Block* current = head;
+    int blockNum = 1;
+    while (current != NULL) {
+        printf("Block %d: Size = %d, Allocated = %s\n", blockNum++, current->size, current->allocated ? "Yes" : "No");
+        current = current->next;
+    }
+}
+
+int main() {
+    int totalMemorySize = 100;
+    Block* memory = initializeMemory(totalMemorySize);
+
+    printf("Initial memory status:\n");
+    displayMemory(memory);
+
+    // Allocate memory using different strategies
+    Block* block1 = allocateFirstFit(memory, 20);
+    printf("\nAllocated 20 units using First-fit:\n");
+    displayMemory(memory);
+
+    Block* block2 = allocateBestFit(memory, 30);
+    printf("\nAllocated 30 units using Best-fit:\n");
+    displayMemory(memory);
+
+    Block* block3 = allocateWorstFit(memory, 10);
+    printf("\nAllocated 10 units using Worst-fit:\n");
+    displayMemory(memory);
+
+    // Deallocate memory
+    deallocateMemory(block2);
+    printf("\nDeallocated block of 30 units:\n");
+    displayMemory(memory);
+
+    return 0;
+}
