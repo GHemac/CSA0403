@@ -1,0 +1,67 @@
+#include <stdio.h>
+#include <pthread.h>
+#include <unistd.h>
+
+// Shared resource
+int shared_variable = 0;
+
+// Mutex lock
+pthread_mutex_t mutex;
+
+// Function to be executed by thread 1
+void *thread1_function(void *arg) {
+    pthread_mutex_lock(&mutex); // Acquire the mutex lock
+    printf("Thread 1: Acquired lock\n");
+    shared_variable++;
+    printf("Thread 1: Shared variable = %d\n", shared_variable);
+    sleep(1); // Simulate some work
+    pthread_mutex_unlock(&mutex); // Release the mutex lock
+    printf("Thread 1: Released lock\n");
+    return NULL;
+}
+
+// Function to be executed by thread 2
+void *thread2_function(void *arg) {
+    pthread_mutex_lock(&mutex); // Acquire the mutex lock
+    printf("Thread 2: Acquired lock\n");
+    shared_variable--;
+    printf("Thread 2: Shared variable = %d\n", shared_variable);
+    pthread_mutex_unlock(&mutex); // Release the mutex lock
+    printf("Thread 2: Released lock\n");
+    return NULL;
+}
+
+int main() {
+    pthread_t thread1, thread2;
+
+    // Initialize the mutex lock
+    if (pthread_mutex_init(&mutex, NULL) != 0) {
+        perror("Mutex initialization failed");
+        return 1;
+    }
+
+    // Create the threads
+    if (pthread_create(&thread1, NULL, thread1_function, NULL) != 0) {
+        perror("Thread 1 creation failed");
+        return 1;
+    }
+    if (pthread_create(&thread2, NULL, thread2_function, NULL) != 0) {
+        perror("Thread 2 creation failed");
+        return 1;
+    }
+
+    // Wait for the threads to finish
+    if (pthread_join(thread1, NULL) != 0) {
+       perror("Thread 1 join failed");
+       return 1;
+    }
+    if (pthread_join(thread2, NULL) != 0) {
+        perror("Thread 2 join failed");
+        return 1;
+    }
+
+    // Destroy the mutex lock
+    pthread_mutex_destroy(&mutex);
+
+    return 0;
+}
