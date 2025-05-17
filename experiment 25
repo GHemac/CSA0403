@@ -1,0 +1,88 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <dirent.h>
+
+int main() {
+    int fd, read_bytes, seek_offset;
+    char buffer[1024];
+    struct stat file_stat;
+    DIR *dir;
+    struct dirent *entry;
+    char filename[256];
+
+    // open (O_RDWR | O_CREAT)
+    printf("Enter filename to open/create: ");
+    scanf("%s", filename);
+    fd = open(filename, O_RDWR | O_CREAT, 0666);
+    if (fd == -1) {
+        perror("open");
+        exit(1);
+    }
+    printf("File opened successfully, file descriptor: %d\n", fd);
+
+    // write
+    printf("Enter text to write to file: ");
+    scanf(" %[^\n]s", buffer); // Read until newline
+    write_bytes = write(fd, buffer, strlen(buffer));
+     if (write_bytes == -1) {
+        perror("write");
+        close(fd);
+        exit(1);
+    }
+    printf("Written %d bytes to file.\n", write_bytes);
+
+    // lseek
+    printf("Enter seek offset: ");
+    scanf("%d", &seek_offset);
+    if (lseek(fd, seek_offset, SEEK_SET) == -1) {
+        perror("lseek");
+        close(fd);
+        exit(1);
+    }
+    printf("Seeked to position %d\n", seek_offset);
+
+    // read
+    read_bytes = read(fd, buffer, sizeof(buffer) - 1);
+    if (read_bytes == -1) {
+        perror("read");
+        close(fd);
+        exit(1);
+    }
+    buffer[read_bytes] = '\0';
+    printf("Read from file: %s\n", buffer);
+
+    // stat
+    if (stat(filename, &file_stat) == -1) {
+        perror("stat");
+        close(fd);
+        exit(1);
+    }
+    printf("File size: %ld bytes\n", file_stat.st_size);
+    printf("File permissions: %o\n", file_stat.st_mode & 0777);
+
+    // opendir and readdir
+    dir = opendir(".");
+    if (dir == NULL) {
+        perror("opendir");
+        close(fd);
+        exit(1);
+    }
+    printf("Files in current directory:\n");
+    while ((entry = readdir(dir)) != NULL) {
+        printf("%s\n", entry->d_name);
+    }
+    closedir(dir);
+
+    // close
+    if (close(fd) == -1) {
+        perror("close");
+        exit(1);
+    }
+    printf("File closed successfully.\n");
+
+    return 0;
+}
