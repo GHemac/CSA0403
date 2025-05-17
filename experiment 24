@@ -1,0 +1,66 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <string.h>
+
+int main() {
+    int fd, bytes_written, bytes_read;
+    char buffer[1024];
+    const char *filename = "temp.txt";
+    const char *message = "Hello, Unix system calls!";
+
+    // Create and open the file
+    fd = open(filename, O_WRONLY | O_CREAT, 0644);
+    if (fd == -1) {
+        perror("open");
+        exit(1);
+    }
+
+    // Write to the file
+    bytes_written = write(fd, message, strlen(message));
+    if (bytes_written == -1) {
+        perror("write");
+        close(fd);
+        exit(1);
+    }
+    printf("Wrote %d bytes to %s\n", bytes_written, filename);
+
+    // Close the file
+    if (close(fd) == -1) {
+        perror("close");
+        exit(1);
+    }
+
+    // Reopen the file for reading
+    fd = open(filename, O_RDONLY);
+    if (fd == -1) {
+        perror("open");
+        exit(1);
+    }
+
+    // Read from the file
+    bytes_read = read(fd, buffer, sizeof(buffer) - 1);
+    if (bytes_read == -1) {
+        perror("read");
+        close(fd);
+        exit(1);
+    }
+    buffer[bytes_read] = '\0'; 
+    printf("Read %d bytes from %s: %s\n", bytes_read, filename, buffer);
+
+    // Close the file
+    if (close(fd) == -1) {
+        perror("close");
+        exit(1);
+    }
+
+    // Delete the file
+    if (unlink(filename) == -1) {
+        perror("unlink");
+        exit(1);
+    }
+    printf("Deleted file %s\n", filename);
+
+    return 0;
+}
