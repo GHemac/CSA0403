@@ -1,0 +1,79 @@
+#include <stdio.h>
+#include <dirent.h>
+#include <sys/stat.h>
+#include <time.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+// Function to print file permissions
+void print_permissions(mode_t mode) {
+    printf((S_ISDIR(mode) ? "d" : "-")); // Directory or file
+    printf((mode & S_IRUSR) ? "r" : "-"); // Read by owner
+    printf((mode & S_IWUSR) ? "w" : "-"); // Write by owner
+    printf((mode & S_IXUSR) ? "x" : "-"); // Execute by owner
+    printf((mode & S_IRGRP) ? "r" : "-"); // Read by group
+    printf((mode & S_IWGRP) ? "w" : "-"); // Write by group
+    printf((mode & S_IXGRP) ? "x" : "-"); // Execute by group
+    printf((mode & S_IROTH) ? "r" : "-"); // Read by others
+    printf((mode & S_IWOTH) ? "w" : "-"); // Write by others
+    printf((mode & S_IXOTH) ? "x" : "-"); // Execute by others
+}
+
+// Function to get file modification time
+void print_time(struct stat sb) {
+    time_t time_value = sb.st_mtime;
+    char buffer[80];
+    strftime(buffer, sizeof(buffer), "%b %d %H:%M", localtime(&time_value));
+    printf("%s ", buffer);
+}
+
+int main(int argc, char *argv[]) {
+    // Default directory to list is the current directory (".")
+    const char *directory = ".";
+
+    // Check if a directory is specified as an argument
+    if (argc > 1) {
+        directory = argv[1];
+    }
+
+    // Open the directory
+    DIR *dir = opendir(directory);
+    if (dir == NULL) {
+        perror("opendir");
+        return 1;
+    }
+
+    // Read directory entries
+    struct dirent *entry;
+    while ((entry = readdir(dir)) != NULL) {
+        // Skip "." and ".." entries
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+            continue;
+        }
+
+        // Get file information using stat
+        struct stat file_stat;
+        char full_path[PATH_MAX];
+        snprintf(full_path, sizeof(full_path), "%s/%s", directory, entry->d_name);
+        if (stat(full_path, &file_stat) == -1) {
+            perror("stat");
+            continue;
+        }
+
+        // Print file information (emulating ls -l output)
+        print_permissions(file_stat.st_mode);
+        printf("  ");
+        printf("%ld ", file_stat.st_nlink);
+        printf("%s ", getpwuid(file_stat.st_uid)->pw_name);
+        printf("%s ", getgrgid(file_stat.st_gid)->gr_name);
+        printf("%10lld ", file_stat.st_size);
+        print_time(file_stat);
+        printf("%s\n", entry->d_name);
+    }
+
+    // Close the directory
+    closedir(dir);
+
+    return 0;
+}
