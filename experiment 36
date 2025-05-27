@@ -1,0 +1,173 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+
+#define DISK_SIZE 200
+
+// Structure to represent a file
+typedef struct {
+    int start_block;
+    int length;
+    bool allocated;
+} File;
+
+// Global disk array
+bool disk[DISK_SIZE];
+
+// Function to initialize the disk
+void initialize_disk() {
+    for (int i = 0; i < DISK_SIZE; i++) {
+        disk[i] = false; // false means free
+    }
+}
+
+// Function to display the disk status
+void display_disk() {
+    printf("Disk Status:\n");
+    for (int i = 0; i < DISK_SIZE; i++) {
+        printf(disk[i] ? "[X]" : "[ ]");
+        if ((i + 1) % 20 == 0) printf("\n");
+    }
+    printf("\n");
+}
+
+// Contiguous Allocation
+bool allocate_contiguous(File *file) {
+    int start_block = -1;
+    int count = 0;
+
+    for (int i = 0; i < DISK_SIZE; i++) {
+        if (!disk[i]) {
+            if (count == 0) start_block = i;
+            count++;
+            if (count == file->length) {
+                for (int j = start_block; j < start_block + file->length; j++) {
+                    disk[j] = true;
+                }
+                file->start_block = start_block;
+                file->allocated = true;
+                return true;
+            }
+        } else {
+            count = 0;
+        }
+    }
+    return false;
+}
+
+// Linked Allocation
+bool allocate_linked(File *file) {
+    int blocks_needed = file->length;
+    int allocated_blocks = 0;
+    int prev_block = -1;
+    int start_block = -1;
+
+    for (int i = 0; i < DISK_SIZE && allocated_blocks < blocks_needed; i++) {
+        if (!disk[i]) {
+            disk[i] = true;
+            if (allocated_blocks == 0) start_block = i;
+            allocated_blocks++;
+            if (prev_block != -1) {
+            }
+            prev_block = i;
+        }
+    }
+    if (allocated_blocks == blocks_needed) {
+        file->start_block = start_block;
+        file->allocated = true;
+        return true;
+    }
+    else{
+        // Free the allocated blocks if allocation fails
+        for (int i = 0; i < DISK_SIZE; i++) {
+          if (disk[i] && allocated_blocks > 0) {
+            disk[i] = false;
+            allocated_blocks--;
+          }
+        }
+        return false;
+    }
+}
+
+// Indexed Allocation
+bool allocate_indexed(File *file) {
+    int blocks_needed = file->length;
+    int index_block = -1;
+    int allocated_blocks = 0;
+
+    // Find a free block for index block
+    for (int i = 0; i < DISK_SIZE; i++) {
+        if (!disk[i]) {
+            index_block = i;
+            disk[i] = true;
+            break;
+        }
+    }
+    if(index_block == -1) return false;
+
+    // Allocate data blocks
+    for (int i = 0; i < DISK_SIZE && allocated_blocks < blocks_needed; i++) {
+        if (!disk[i]) {
+            disk[i] = true;
+            allocated_blocks++;
+        }
+    }
+    if (allocated_blocks == blocks_needed) {
+      file->start_block = index_block;
+      file->allocated = true;
+      return true;
+    } else {
+        // Free the allocated blocks if allocation fails
+        disk[index_block] = false;
+        for (int i = 0; i < DISK_SIZE; i++) {
+          if (disk[i] && allocated_blocks > 0) {
+            disk[i] = false;
+            allocated_blocks--;
+          }
+        }
+        return false;
+    }
+}
+
+int main() {
+    initialize_disk();
+    File file;
+    int choice;
+
+    printf("File Allocation Simulation\n");
+    printf("1. Contiguous Allocation\n");
+    printf("2. Linked Allocation\n");
+    printf("3. Indexed Allocation\n");
+    printf("Enter your choice: ");
+    scanf("%d", &choice);
+
+    printf("Enter the length of the file: ");
+    scanf("%d", &file.length);
+    file.allocated = false;
+
+    bool success = false;
+    switch (choice) {
+        case 1:
+            success = allocate_contiguous(&file);
+            break;
+        case 2:
+            success = allocate_linked(&file);
+            break;
+        case 3:
+            success = allocate_indexed(&file);
+            break;
+        default:
+            printf("Invalid choice\n");
+            return 1;
+    }
+
+    if (success) {
+        printf("File allocated successfully!\n");
+        printf("Start Block: %d\n", file.start_block);
+    } else {
+        printf("File allocation failed. Not enough space.\n");
+    }
+
+    display_disk();
+    return 0;
+}
