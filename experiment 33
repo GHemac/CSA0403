@@ -1,0 +1,66 @@
+#include <stdio.h>
+#include <stdbool.h>
+
+// Function to check if a page is present in frames
+bool is_present(int page, int frames[], int frame_count) {
+    for (int i = 0; i < frame_count; i++) {
+        if (frames[i] == page) return true;
+    }
+    return false;
+}
+
+// Function to find the optimal page to replace
+int find_optimal_replacement(int reference_string[], int frames[], int frame_count, int current_index, int reference_length) {
+    int furthest_index = -1;
+    int replace_index = -1;
+
+    for (int i = 0; i < frame_count; i++) {
+        int frame_page = frames[i];
+        int found = 0;
+        for (int j = current_index + 1; j < reference_length; j++) {
+            if (reference_string[j] == frame_page) {
+                if (j > furthest_index) {
+                    furthest_index = j;
+                    replace_index = i;
+                }
+                found = 1;
+                break;
+            }
+        }
+         if (found == 0) return i;
+    }
+    return replace_index;
+}
+
+// Function to simulate optimal paging
+void simulate_optimal_paging(int reference_string[], int reference_length, int frame_count) {
+    int frames[frame_count];
+    for (int i = 0; i < frame_count; i++) frames[i] = -1; // Initialize frames as empty
+    int page_faults = 0;
+    int frame_index = 0;
+
+    for (int i = 0; i < reference_length; i++) {
+        int page = reference_string[i];
+        if (!is_present(page, frames, frame_count)) {
+            page_faults++;
+            if (frame_index < frame_count) {
+                frames[frame_index++] = page;
+            } else {
+                int replace_idx = find_optimal_replacement(reference_string, frames, frame_count, i, reference_length);
+                frames[replace_idx] = page;
+            }
+        }
+    }
+
+    printf("Total Page Faults: %d\n", page_faults);
+}
+
+int main() {
+    int reference_string[] = {7, 0, 1, 2, 0, 3, 0, 4, 2, 3, 0, 3, 2};
+    int reference_length = sizeof(reference_string) / sizeof(reference_string[0]);
+    int frame_count = 3;
+
+    simulate_optimal_paging(reference_string, reference_length, frame_count);
+
+    return 0;
+}
