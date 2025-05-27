@@ -1,0 +1,86 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+// Function to find the least recently used page
+int findLRU(int time[], int n) {
+    int minimum = time[0], pos = 0;
+    for (int i = 1; i < n; ++i) {
+        if (time[i] < minimum) {
+            minimum = time[i];
+            pos = i;
+        }
+    }
+    return pos;
+}
+
+int main() {
+    int frames, pages, page_faults = 0, time = 0;
+
+    printf("Enter the number of frames: ");
+    scanf("%d", &frames);
+
+    printf("Enter the number of pages: ");
+    scanf("%d", &pages);
+
+    int *page_stream = (int *)malloc(pages * sizeof(int));
+    int *memory = (int *)malloc(frames * sizeof(int));
+    int *last_used = (int *)malloc(frames * sizeof(int));
+
+    printf("Enter the page stream: ");
+    for (int i = 0; i < pages; ++i) {
+        scanf("%d", &page_stream[i]);
+    }
+
+    for (int i = 0; i < frames; ++i) {
+        memory[i] = -1; // Initialize memory to -1 (empty)
+        last_used[i] = 0;
+    }
+
+    for (int i = 0; i < pages; ++i) {
+        int page = page_stream[i];
+        int page_found = 0;
+
+        // Check if the page is already in memory
+        for (int j = 0; j < frames; ++j) {
+            if (memory[j] == page) {
+                page_found = 1;
+                last_used[j] = ++time;
+                break;
+            }
+        }
+
+        // If page is not found, handle a page fault
+        if (!page_found) {
+            page_faults++;
+            int empty_frame = -1;
+            for (int j = 0; j < frames; ++j) {
+                if (memory[j] == -1) {
+                    empty_frame = j;
+                    break;
+                }
+            }
+
+            if (empty_frame != -1) {
+                memory[empty_frame] = page;
+                last_used[empty_frame] = ++time;
+            } else {
+                int lru_pos = findLRU(last_used, frames);
+                memory[lru_pos] = page;
+                last_used[lru_pos] = ++time;
+            }
+        }
+
+        printf("Current memory: ");
+        for (int j = 0; j < frames; ++j) {
+            printf("%d ", memory[j]);
+        }
+        printf("\n");
+    }
+
+    printf("Total page faults: %d\n", page_faults);
+
+    free(page_stream);
+    free(memory);
+    free(last_used);
+    return 0;
+}
