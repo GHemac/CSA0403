@@ -1,0 +1,103 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+// Function to sort the request array
+void sort(int arr[], int n) {
+    for (int i = 0; i < n - 1; i++) {
+        for (int j = 0; j < n - i - 1; j++) {
+            if (arr[j] > arr[j + 1]) {
+                int temp = arr[j];
+                arr[j] = arr[j + 1];
+                arr[j + 1] = temp;
+            }
+        }
+    }
+}
+
+int main() {
+    int request[20], n, head, seek = 0, direction, i, j;
+    printf("Enter the number of requests: ");
+    scanf("%d", &n);
+    printf("Enter the request sequence: ");
+    for (i = 0; i < n; i++)
+        scanf("%d", &request[i]);
+    printf("Enter the initial head position: ");
+    scanf("%d", &head);
+    printf("Enter the direction (0 for left, 1 for right): ");
+    scanf("%d", &direction);
+
+    // Sort the request array
+    sort(request, n);
+
+    int current = head;
+    int head_move;
+    int serviced[20];
+    int serviced_count = 0;
+
+    if (direction == 1) {
+      // Move right
+      for(i = 0; i < n; i++) {
+          if(request[i] >= current) {
+              head_move = abs(request[i] - current);
+              seek += head_move;
+              current = request[i];
+              serviced[serviced_count++] = request[i];
+           }
+      }
+    } else {
+      // Move left
+      for(i = n - 1; i >= 0; i--) {
+          if(request[i] <= current) {
+              head_move = abs(request[i] - current);
+              seek += head_move;
+              current = request[i];
+              serviced[serviced_count++] = request[i];
+           }
+      }
+    }
+
+    if(direction == 1) {
+         // Move left
+          for(i = n - 1; i >= 0; i--) {
+              int found = 0;
+              for(j = 0; j < serviced_count; j++) {
+                  if(serviced[j] == request[i]) {
+                      found = 1;
+                      break;
+                  }
+              }
+              if(!found) {
+                   head_move = abs(request[i] - current);
+                   seek += head_move;
+                   current = request[i];
+                   serviced[serviced_count++] = request[i];
+              }
+         }
+    } else {
+        // Move right
+        for(i = 0; i < n; i++) {
+              int found = 0;
+              for(j = 0; j < serviced_count; j++) {
+                  if(serviced[j] == request[i]) {
+                      found = 1;
+                      break;
+                  }
+              }
+              if(!found) {
+                   head_move = abs(request[i] - current);
+                   seek += head_move;
+                   current = request[i];
+                   serviced[serviced_count++] = request[i];
+              }
+         }
+    }
+
+    printf("Total seek time: %d\n", seek);
+    printf("Order of serviced requests: ");
+    for (i = 0; i < serviced_count; i++) {
+      printf("%d ", serviced[i]);
+    }
+    printf("\n");
+
+    return 0;
+}
