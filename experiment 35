@@ -1,0 +1,74 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define MAX_FILES 50
+#define MAX_BLOCKS 100
+
+typedef struct {
+    char name[50];
+    int start_block;
+    int num_blocks;
+} FileEntry;
+
+int main() {
+    FileEntry files[MAX_FILES];
+    int blocks[MAX_BLOCKS];
+    int num_files = 0;
+
+    // Initialize blocks as free
+    for (int i = 0; i < MAX_BLOCKS; i++) {
+        blocks[i] = 0; // 0 for free, 1 for allocated
+    }
+
+    // Simulate file creation and allocation
+    char filename[50];
+    int num_blocks;
+
+    printf("Enter filename (or 'exit'): ");
+    scanf("%s", filename);
+
+    while (strcmp(filename, "exit") != 0) {
+        printf("Enter number of blocks for file: ");
+        scanf("%d", &num_blocks);
+
+        // Find contiguous space
+        int start_block = -1;
+        int i = 0;
+        while (i < MAX_BLOCKS - num_blocks + 1) {
+            if (blocks[i] == 0) {
+                int j = 0;
+                while (j < num_blocks && i + j < MAX_BLOCKS && blocks[i + j] == 0) {
+                    j++;
+                }
+                if (j == num_blocks) {
+                    start_block = i;
+                    break;
+                }
+            }
+            i++;
+        }
+
+        if (start_block != -1) {
+            // Allocate blocks
+            for (int j = 0; j < num_blocks; j++) {
+                blocks[start_block + j] = 1;
+            }
+
+            // Update file information
+            strcpy(files[num_files].name, filename);
+            files[num_files].start_block = start_block;
+            files[num_files].num_blocks = num_blocks;
+            num_files++;
+
+            printf("File '%s' allocated starting at block %d\n", filename, start_block);
+        } else {
+            printf("Not enough contiguous space for file '%s'\n", filename);
+        }
+
+        printf("Enter filename (or 'exit'): ");
+        scanf("%s", filename);
+    }
+
+    return 0;
+}
